@@ -41,8 +41,8 @@ fun SetupScreen(updates: UpdateViewModel, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.channel), style = llText(12.sp), modifier = Modifier.padding(top = 6.dp))
-                Pill(stringResource(R.string.channel_stable), !updates.beta) { updates.setBeta(false) }
-                Pill(stringResource(R.string.channel_beta), updates.beta) { updates.setBeta(true) }
+                Pill(stringResource(R.string.channel_stable), !updates.beta) { updates.selectBeta(false) }
+                Pill(stringResource(R.string.channel_beta), updates.beta) { updates.selectBeta(true) }
             }
             Spacer(Modifier.height(12.dp))
             when (val s = updates.state) {

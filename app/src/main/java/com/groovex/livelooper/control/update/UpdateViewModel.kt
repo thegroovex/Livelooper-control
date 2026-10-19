@@ -33,7 +33,7 @@ class UpdateViewModel(app: Application) : AndroidViewModel(app) {
     var beta by mutableStateOf(prefs.getBoolean("beta", false))
         private set
 
-    fun setBeta(value: Boolean) {
+    fun selectBeta(value: Boolean) {
         beta = value
         prefs.edit().putBoolean("beta", value).apply()
         check()
