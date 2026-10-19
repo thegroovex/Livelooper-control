@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "*-wip"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "17"
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.f.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - id: f
+        name: Path filter (docs/mockups only -> skip builds)
+        env:
+          FORCE: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[ci full]') }}
+        run: |
+          if [ "$FORCE" = "true" ]; then echo "code=true" >> $GITHUB_OUTPUT; exit 0; fi
+          base=${{ github.event.pull_request.base.sha || github.event.before }}
+          if [ -z "$base" ] || ! git cat-file -e "$base" 2>/dev/null; then base=HEAD~1; fi
+          files=$(git diff --name-only "$base" HEAD || echo force)
+          echo "$files"
+          if echo "$files" | grep -vqE '^(docs/|tools/mockups/|README|.*\.md$)'; then echo "code=true" >> $GITHUB_OUTPUT; else echo "code=false" >> $GITHUB_OUTPUT; fi
+
+  check:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "${{ env.JAVA_VERSION }}" }
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Lint + unit tests
+        run: ./gradlew --no-daemon lintDebug testDebugUnitTest
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: reports, path: "app/build/reports/", retention-days: 3 }
+
+  assemble:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "${{ env.JAVA_VERSION }}" }
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Build debug APK
+        run: ./gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: livelooper-control-debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 3
+
+  release:
+    needs: [check, assemble]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "${{ env.JAVA_VERSION }}" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { cache-read-only: true }
+      - name: Build signed release APK
+        env:
+          APP_VERSION: ${{ github.ref_name }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "::error::secret ANDROID_KEYSTORE_PASSWORD missing"; exit 1; }
+          ./gradlew --no-daemon assembleRelease
+          v=${GITHUB_REF_NAME#v}
+          mkdir out
+          cp app/build/outputs/apk/release/app-release.apk out/livelooper-control-$v.apk
+          (cd out && sha256sum livelooper-control-$v.apk > livelooper-control-$v.apk.sha256)
+      - name: Release notes (EN + DE from CHANGELOG.md)
+        run: |
+          v=${GITHUB_REF_NAME#v}
+          awk -v v="$v" '$0 ~ "^## "v"( |$)"{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md || true
+          [ -s notes.md ] || echo "livelooper control $v" > notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          body_path: notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [changes, check, assemble, release]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          for r in "${{ needs.changes.result }}" "${{ needs.check.result }}" "${{ needs.assemble.result }}" "${{ needs.release.result }}"; do
+            case "$r" in success|skipped) ;; *) echo "failed: $r"; exit 1;; esac
+          done
