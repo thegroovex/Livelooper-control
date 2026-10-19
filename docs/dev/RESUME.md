@@ -8,7 +8,7 @@
 - Signing: `signing/release.p12` (PKCS12, alias livelooper-control, SHA-256 cert fingerprint A9:5A:62:E2:…:D2:8C). Password only in secret ANDROID_KEYSTORE_PASSWORD – the GitHub integration cannot write secrets, the USER adds it once in repo settings. Backup was handed to the user.
 
 ## Next
-1. CI green on main → tag v0.1.0 (needs the secret) → user installs APK once manually, then updates come in-app.
+1. CI green on main (0df17f0 ✓) → tag v0.1.0 (needs the secret) → user installs APK once manually, then updates come in-app.
 2. M1: `protocol/` spec + golden fixtures, livelooper `src/remote/` RemoteServer on branch remote-wip, discovery, pairing, LIVE bound to real state.
 
 ## Rules
