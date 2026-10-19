@@ -69,7 +69,7 @@ App side: Compose pointer input without recomposition per event, high refresh ra
 - Check GitHub Releases of `thegroovex/Livelooper-control` (`/releases/latest`; channel *Beta* includes pre-releases) on start, at most once per 24 h, plus a manual button.
 - Download the APK asset + `.sha256`, verify the hash, install via `PackageInstaller` session (needs `REQUEST_INSTALL_PACKAGES` and one-time "install unknown apps" permission). Android itself enforces the same signing key.
 - Not distributed via Play Store (Play forbids self-updating); optional F-Droid later.
-- **Signing key:** generated once, stored as GitHub Actions secrets; you get an offline backup copy. Losing it means users must reinstall.
+- **Signing key:** PKCS12 keystore (AES-256) committed in `signing/`, its random password only in the GitHub secret `ANDROID_KEYSTORE_PASSWORD`; you get an offline backup copy. Losing it means users must reinstall.
 
 ## 8. CI & builds (same pattern as OHPE / livelooper)
 
@@ -85,7 +85,14 @@ App side: Compose pointer input without recomposition per event, high refresh ra
 - `docs/dev/RESUME.md`: current state, next step, open decisions – the first file a fresh session reads.
 - `tools/bootstrap.sh` recreates the workspace (clone both repos, git identity, Python deps for mockups). Mockup renderer + fonts are in the repo (`tools/mockups`).
 
-## 10. Milestones
+## 10. Samsung DeX & external touch monitors (user request 2026-10-19, S25 Ultra)
+
+- Freely resizable window (`resizeableActivity`, no orientation lock outside the phone's own screen), DeX keep-alive meta-data, no restart when moving between displays (`configChanges` incl. density).
+- Layout by window size: phone landscape vs. large layout (≥ 1000 × 600 dp) for tablets, DeX windows and external touch monitors.
+- All controls fire on touch-down and are multi-touch capable (each finger owns its control), so a multitouch monitor on DeX works like a tablet.
+- M2: dual-screen mode – phone as controller (FX/XY or pads), external monitor as full LIVE/MIX view (`Presentation` API / second activity on the secondary display); mouse hover + keyboard shortcuts on DeX.
+
+## 11. Milestones
 
 1. **M0** – app scaffold, theme, CI, release signing, updater; release 0.1.0 to test the update path.
 2. **M1** – protocol spec + fixtures, `RemoteServer` in livelooper, USB network + WLAN discovery, pairing, LIVE screen.

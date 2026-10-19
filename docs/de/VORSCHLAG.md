@@ -69,7 +69,7 @@ App-seitig: Compose-Pointer-Input ohne Recomposition pro Event, hohe Bildwiederh
 - Prüft die GitHub Releases von `thegroovex/Livelooper-control` (`/releases/latest`; Kanal *Beta* inkl. Pre-Releases) beim Start, höchstens alle 24 h, plus Button.
 - Lädt APK + `.sha256`, prüft den Hash, installiert per `PackageInstaller`-Session (braucht `REQUEST_INSTALL_PACKAGES` und einmalig „Unbekannte Apps installieren"). Android erzwingt selbst denselben Signaturschlüssel.
 - Kein Play Store (Play verbietet Selbst-Updates); F-Droid später optional.
-- **Signaturschlüssel:** einmal erzeugt, als GitHub-Actions-Secret gespeichert; du bekommst eine Offline-Sicherung. Geht er verloren, müssen Nutzer neu installieren.
+- **Signaturschlüssel:** PKCS12-Keystore (AES-256) liegt in `signing/`, sein Zufallspasswort nur im GitHub-Secret `ANDROID_KEYSTORE_PASSWORD`; du bekommst eine Offline-Sicherung. Geht er verloren, müssen Nutzer neu installieren.
 
 ## 8. CI & Builds (Muster wie OHPE / livelooper)
 
@@ -85,7 +85,14 @@ App-seitig: Compose-Pointer-Input ohne Recomposition pro Event, hohe Bildwiederh
 - `docs/dev/RESUME.md`: aktueller Stand, nächster Schritt, offene Entscheidungen – die erste Datei, die eine neue Sitzung liest.
 - `tools/bootstrap.sh` stellt den Workspace wieder her (beide Repos klonen, Git-Identität, Python-Pakete für Mockups). Mockup-Renderer + Schriften liegen im Repo (`tools/mockups`).
 
-## 10. Meilensteine
+## 10. Samsung DeX & externe Touch-Monitore (Wunsch 19.10.2026, S25 Ultra)
+
+- Frei skalierbares Fenster (`resizeableActivity`, keine Orientierungssperre außerhalb des Phone-Displays), DeX-Keep-Alive-Metadaten, kein Neustart beim Wechsel zwischen Bildschirmen (`configChanges` inkl. density).
+- Layout nach Fenstergröße: Phone-Querformat vs. großes Layout (≥ 1000 × 600 dp) für Tablets, DeX-Fenster und externe Touch-Monitore.
+- Alle Bedienelemente reagieren beim Berühren und sind multitouchfähig (jeder Finger gehört seinem Element) – ein Multitouch-Monitor unter DeX funktioniert wie ein Tablet.
+- M2: Zwei-Bildschirm-Modus – Phone als Controller (FX/XY oder Pads), externer Monitor als volle LIVE/MIX-Ansicht (`Presentation`-API / zweite Activity auf dem Zweitbildschirm); Maus-Hover + Tastenkürzel unter DeX.
+
+## 11. Meilensteine
 
 1. **M0** – App-Gerüst, Theme, CI, Release-Signatur, Updater; Release 0.1.0 zum Testen des Update-Wegs.
 2. **M1** – Protokoll-Spezifikation + Fixtures, `RemoteServer` in livelooper, USB-Netzwerk + WLAN-Discovery, Kopplung, LIVE-Ansicht.

@@ -3,15 +3,13 @@
 *Dev notes are English only (not user-facing).*
 
 ## State (2026-10-19)
-- Phase: **proposal + mockups, waiting for user approval.** No app code yet.
-- Proposal: `docs/en/PROPOSAL.md` / `docs/de/VORSCHLAG.md`.
-- Mockups: `docs/mockups/*.png`, rendered by `python3 tools/mockups/render.py [m1 m2 m3 m4]` (~70 s for all; Pillow, fonts in `tools/mockups/fonts`).
+- Proposal approved by user 2026-10-19 (+ Samsung DeX / external multitouch monitor support, §10).
+- M0 code pushed (5fd13b3): Gradle 8.11.1 wrapper, AGP 8.7.3, Kotlin 2.0.21, Compose BOM 2024.12.01; LIVE demo screen, SETUP with updater, DeX manifest/orientation logic, EN+DE strings, VersionTest; CI `.github/workflows/ci.yml`; CHANGELOG.md (release notes source, EN+DE per version).
+- Signing: `signing/release.p12` (PKCS12, alias livelooper-control, SHA-256 cert fingerprint A9:5A:62:E2:…:D2:8C). Password only in secret ANDROID_KEYSTORE_PASSWORD – the GitHub integration cannot write secrets, the USER adds it once in repo settings. Backup was handed to the user.
 
-## Next step after approval (M0)
-1. Gradle scaffold (Kotlin 2.x, Compose, minSdk 26, targetSdk 35), theme (glass, Manrope, brand gradient), EN+DE strings.
-2. CI `.github/workflows/ci.yml` per proposal §8 (changes → check ∥ assemble → "CI result"; release on tags).
-3. Release keystore → repo secrets (`ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`); backup to user.
-4. Updater (GitHub Releases, sha256, PackageInstaller); tag v0.1.0.
+## Next
+1. CI green on main → tag v0.1.0 (needs the secret) → user installs APK once manually, then updates come in-app.
+2. M1: `protocol/` spec + golden fixtures, livelooper `src/remote/` RemoteServer on branch remote-wip, discovery, pairing, LIVE bound to real state.
 
 ## Rules
 - Commit + push after every step. No local Gradle builds; CI is the compiler. Wait with `tools/ci-wait.sh <run>` in background, read only failing logs.
